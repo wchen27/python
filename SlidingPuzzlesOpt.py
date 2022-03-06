@@ -1,0 +1,214 @@
+
+import time, sys
+from collections import deque
+import heapq
+
+def build_board(puzzleString):
+    s = ''
+    length, puzzle = int(puzzleString.split()[0]), puzzleString.split()[1]
+    for i in range(length):
+        for j in range(length):
+            s += puzzle[i * length + j] + ' '
+        s += '\n'
+    return s
+
+goal = 'ABCDEFGHIJKLMNO.'
+
+finalpos = {'A':(0, 0), 'B':(0, 1), 'C':(0, 2), 'D':(0, 3),
+            'E':(1, 0), 'F':(1, 1), 'G':(1, 2), 'H':(1, 3),
+            'I':(2, 0), 'J':(2, 1), 'K':(2, 2), 'L':(2, 3),
+            'M':(3, 0), 'N':(3, 1), 'O':(3, 2)}
+
+def print_puzzle(puzzleString):
+    print(build_board(puzzleString))
+
+def row_conflict(row, n):
+    correct = goal[n * 4 : n * 4 + 4]
+    if row == correct:
+        return 0
+    count = 0
+    compare = ''
+    oop = 0
+    for char in row:
+        if char in correct:
+            compare += char
+            count += 1
+    if count <= 1:
+        return 0
+    for i in range(len(compare) - 1):
+        for j in range(i + 1, len(compare)):
+            curr = compare[i] + compare[j]
+            if curr != ''.join(sorted(curr)):
+                oop += 1
+    
+    if oop == 1:
+        return 2
+    if 2 <= oop <= 4:
+        return 4
+    return 6
+
+def col_conflict(row, n):
+    correct = goal[n] + goal[n + 4] + goal[n + 8] + goal[n + 12]
+    print(correct)
+    if row == correct:
+        return 0
+    count = 0
+    compare = ''
+    oop = 0
+    for char in row:
+        if char in correct:
+            compare += char
+            count += 1
+    if count <= 1:
+        return 0
+    for i in range(len(compare) - 1):
+        for j in range(i + 1, len(compare)):
+            curr = compare[i] + compare[j]
+            if curr != ''.join(sorted(curr)):
+                oop += 1
+    
+    if oop == 1:
+        return 2
+    if 2 <= oop <= 4:
+        return 4
+    return 6
+
+
+def find_goal(puzzleString):
+    length, puzzle = int(puzzleString.split()[0]), puzzleString.split()[1]
+    return str(length) + ' ' + ''.join(sorted(puzzle))[1:] + '.'
+
+
+def goal_test(puzzleString):
+    length, puzzle = int(puzzleString.split()[0]), puzzleString.split()[1]
+    return True if puzzleString == find_goal(puzzleString) else False
+
+
+def get_children(puzzleString): 
+    length, puzzle = int(puzzleString.split()[0]), puzzleString.split()[1]
+    clear = puzzle.find('.')
+    legalMoves = []  # indices of legal moves
+    abv, blw, nxt, lst = clear - length, clear + length, clear + 1, clear - 1
+    if abv >= 0:
+        legalMoves.append((abv, 'v', -1))
+    if blw < length ** 2:
+        legalMoves.append((blw, 'v', 1))
+    if nxt < length ** 2 and nxt % length > clear % length:
+        legalMoves.append((nxt, 'h', 1))
+    if lst >= 0 and lst % length < clear % length:
+        legalMoves.append((lst, 'h', -1))
+
+    # return list of legal board positions
+    legalPositions = []
+    for move, direction, amount in legalMoves:
+        char = puzzle[move]
+        fpos = finalpos[char]
+        temp = [c for c in puzzle]
+        cpos = (move // length, move % length)
+        npos = (clear // length, clear % length)
+        temp[clear], temp[move] = temp[move], temp[clear]
+        if (direction == 'v'):
+            if abs(npos[0] - fpos[0]) < abs(cpos[0] - fpos[0]):    
+                legalPositions.append((str(length) + ' ' + ''.join(temp), -1))
+            else:
+                legalPositions.append((str(length) + ' ' + ''.join(temp), 1))
+        else:
+            if abs(npos[1] - fpos[1]) < abs(cpos[1] - fpos[1]):
+                legalPositions.append((str(length) + ' ' + ''.join(temp), -1))
+            else:
+                legalPositions.append((str(length) + ' ' + ''.join(temp), 1))
+
+
+    return legalPositions
+
+
+def parityCheck(puzzleString):
+    length, puzzle = puzzleString.split()
+    length = int(length)
+    parity = 0
+    temp = puzzle[:puzzle.find('.')] + puzzle[puzzle.find('.') + 1:]
+    for i in range(len(temp) - 1):
+        for j in range(i, len(temp)):
+            curr = temp[i] + temp[j]
+            if curr != ''.join(sorted(curr)):
+                parity += 1
+    
+    if length % 2 == 0:
+        clearPos = puzzle.find('.') // length + 1
+        if clearPos % 2 == 0:
+            return parity % 2 == 0
+        return parity % 2 == 1
+    
+    return parity % 2 == 0
+
+
+def taxicab(puzzleString):
+    goal = find_goal(puzzleString)
+    length = int(puzzleString[0])
+    puzzle = puzzleString[2:]
+    dist = 0
+    for i in range(len(puzzle)):
+        if puzzle[i] == '.':
+            continue
+        coordinates = (i % length, i // length)
+        ind = goal.find(puzzle[i]) - 2
+        actual = (ind % length, ind // length)
+        dist += abs(coordinates[0] - actual[0]) + abs(coordinates[1] - actual[1])
+
+    return dist
+
+def AStar(puzzleString):
+    taxi = taxicab(puzzleString)
+    closed = set()
+    start = (taxi, 0, puzzleString, taxi)
+    fringe = []
+    heapq.heappush(fringe, start)
+    while fringe:
+        curr = heapq.heappop(fringe)
+        if goal_test(curr[2]):
+            return curr[1]
+            # return curr[3]
+        if curr[2] not in closed:
+            closed.add(curr[2])
+            for child, h in get_children(curr[2]):
+                if child not in closed:
+                    d = curr[1] + 1
+                    heapq.heappush(fringe, (d + curr[3] + h, d, child, curr[3] + h))
+    
+    return None
+
+
+# file = sys.argv[1]
+file = '15_puzzles.txt'
+with open(file, 'r') as f:
+    lines = [l.strip() for l in f]
+f.close()
+
+# for l, x in enumerate(lines):
+#     print(l, taxicab(x))
+
+print(taxicab('4 .ABCEFGDIJKHMNOL'))
+
+
+
+# def timeA(puzzle, line):
+#     start = time.perf_counter()
+#     x = AStar(puzzle)
+#     end = time.perf_counter()
+#     print('Line', line, puzzle[2:], 'A* -', x, 'moves in', end - start, 'seconds')
+
+
+# for number, puzzle in enumerate(lines):
+#     # puzzle = line[:-2]
+#     # x = line[-1]
+#     puzzle = '4 ' + puzzle
+#     start = time.perf_counter()
+#     if not parityCheck(puzzle):
+#         end = time.perf_counter()
+#         print('line', number, puzzle, 'no solution determined in', end - start, 'seconds')
+#         print()
+#         continue
+#     timeA(puzzle, number)
+    
+
+
