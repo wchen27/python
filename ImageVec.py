@@ -283,14 +283,6 @@ def kmeans_quant_dither(k):
             meanGroups[mean] = []
         i += 1
 
-    # for key in meanGroups.keys():
-    #     points = meanGroups[key]
-    #     for point in points:
-    #         for pix in rgbs[point]:
-    #             a, b, c = int(key[0]), int(key[1]), int(key[2])
-    #             newPixels[pix] = a, b, c
-
-
     colors = list(meanGroups.keys())
     newColors = []
     for curr in colors:
@@ -337,3 +329,5 @@ def kmeans_quant_dither(k):
 
 # BLUE CREDIT
 kmeans_quant(int(sys.argv[2]))
+
+
