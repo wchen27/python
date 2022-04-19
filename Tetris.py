@@ -1,13 +1,13 @@
-import sys, random, heapq, pickle, re, time
+import sys, random, heapq, pickle
 
 
-POPULATION_SIZE = 100
-NUM_CLONES = 40
-TOURNAMENT_SIZE = 10
-TOURNAMENT_WIN_PROB = .6
-CROSSOVER_LOCATIONS = 1
-MUTATION_RATE = 0.2
-STRATEGY_LENGTH = 3
+POPULATION_SIZE = 500
+NUM_CLONES = 50
+TOURNAMENT_SIZE = 50
+TOURNAMENT_WIN_PROB = .8
+CROSSOVER_LOCATIONS = 2
+MUTATION_RATE = 0.8
+STRATEGY_LENGTH = 4
 
 def print_board(boardString):
     for i in range(20):
@@ -27,6 +27,17 @@ def to_col_list(boardString):
         bl.append(''.join(col))
     return bl
 
+def get_depths(boardString):
+    depths = []
+    for i in range(10):
+        currDepth = 0
+        for j in range(20):
+            if boardString[j * 10 + i] == ' ':
+                currDepth += 1
+            else:
+                break
+        depths.append(20 - currDepth)
+    return depths
 
 pieces = {
     'I0' : '####',
@@ -101,7 +112,7 @@ def place_block(board, block, pos):
     for i in range(4):
         blockInd[i] += pos
         if bl[blockInd[i]] == '#':
-            return 'GAME OVER', -1 * 10 ** 10
+            return 'GAME OVER', -1 * 10 ** 10, 0
     
     for i in blockInd:
         bl[i] = '#'
@@ -128,38 +139,68 @@ def place_block(board, block, pos):
                         nbl += currRow
                 nbl = ' ' * 10 * discardRows + nbl
                 
-                return nbl, scoreDict[discardRows]
+                return nbl, scoreDict[discardRows], discardRows
         
         
         for i in range(4):
             bl[temp[i]] = '#'
         blockInd = temp
 
+def get_avg_height(boardString):
+    return sum(get_depths(boardString)) / 10
 
-hole = re.compile(r"# *(#|$)")
-def heuristic(board, strategy):
-    a, b, c = strategy
-    score = 0
-    rows = to_list(board)
-    cols = to_col_list(board)
-    for i in range(20):
-        if '#' in rows[i]:
-            score += a * i
-    score += max([col.find('#') for col in cols]) * b
+def get_holes(boardString):
+    depths = get_depths(boardString)
     holes = 0
-    for col in cols:
-        if hole.search(col) != None:
-            holes += 1
-    score += holes * c
+    for i in range(10):
+        for j in range(depths[i], 0, -1):
+            if boardString[190 - j * 10 + i] == ' ':
+                holes += 1
+    return holes
 
-    return score
+def get_bumpiness(boardString):
+    bumpiness = 0
+    depths = get_depths(boardString)
+    for i in range(9):
+        bumpiness += abs(depths[i] - depths[i + 1])
+    return bumpiness
 
+
+
+def heuristic(board, strategy, cleared):
+    if board == 'GAME OVER':
+        return -(10 ** 10)
+    a, b, c, d = strategy
+    return a * get_avg_height(board) + b * get_holes(board) + c * get_bumpiness(board) + d * cleared
+
+
+# def play_game(strategy):
+#     board = ' ' * 200
+#     points = 0
+#     while True:
+#         boards = []
+#         piece = random.choice(list(pieceNames.keys()))
+#         orientations = pieceNames[piece]
+#         for orientation in orientations:
+#             for i in range(10):
+#                 nb = place_block(board, orientation, i)
+#                 if nb == None:
+#                     continue
+#                 newBoard, scoreAddition, cleared = nb
+#                 heapq.heappush(boards, ((-1) * heuristic(newBoard, strategy, cleared), newBoard, scoreAddition))
+#         _, board, scoreAdd = heapq.heappop(boards)
+#         if board == 'GAME OVER':
+#             break
+#         points += scoreAdd
+#     return points
 
 def play_game(strategy):
     board = ' ' * 200
     points = 0
-    while True:
-        boards = []
+    bestBoard = ''
+    bestLinesCleared = 0
+    while board != 'GAME OVER':
+        currMax = -float('inf')
         piece = random.choice(list(pieceNames.keys()))
         orientations = pieceNames[piece]
         for orientation in orientations:
@@ -167,14 +208,18 @@ def play_game(strategy):
                 nb = place_block(board, orientation, i)
                 if nb == None:
                     continue
-                newBoard, scoreAddition = nb
-                heapq.heappush(boards, ((-1) * heuristic(board, strategy), newBoard, scoreAddition))
-        _, board, scoreAdd = heapq.heappop(boards)
-        if board == 'GAME OVER':
+                newBoard, score, cleared = nb
+                if newBoard == 'GAME OVER': continue
+                h = heuristic(newBoard, strategy, cleared)
+                if h > currMax:
+                    currMax = h
+                    bestBoard = newBoard
+                    bestLinesCleared = cleared
+        if board == bestBoard:
             break
-        points += scoreAdd
+        board = bestBoard
+        points += scoreDict[bestLinesCleared]
     return points
-
 
 
 def fitness(strategy):
@@ -191,54 +236,75 @@ def generate_starting_pop():
             strategy.append(random.uniform(-1, 1))
         
         pop[tuple(strategy)] = fitness(strategy)
+        print(tuple(strategy), '--->', pop[tuple(strategy)])
     return pop
 
-def create_tournament(pop):
-    popList = []
-    for key, val in pop.items():
-        popList.append((val, key))
-    tournamentPop = random.sample(popList, TOURNAMENT_SIZE * 2)
-    random.shuffle(tournamentPop)
-    p1 = tournamentPop[:TOURNAMENT_SIZE]
-    p2 = tournamentPop[TOURNAMENT_SIZE:]
-    p1.sort() ; p2.sort()
-    while p1:
-        if random.random() < TOURNAMENT_WIN_PROB:
-            p1winner = p1.pop()
-            break
-        p1winner = p1.pop()
+# def create_tournament(pop):
+#     popList = []
+#     for key, val in pop.items():
+#         popList.append((val, key))
+#     tournamentPop = random.sample(popList, TOURNAMENT_SIZE * 2)
+#     random.shuffle(tournamentPop)
+#     p1 = tournamentPop[:TOURNAMENT_SIZE]
+#     p2 = tournamentPop[TOURNAMENT_SIZE:]
+#     p1.sort() ; p2.sort()
+#     while p1:
+#         if random.random() < TOURNAMENT_WIN_PROB:
+#             p1winner = p1.pop()
+#             break
+#         p1winner = p1.pop()
 
-    while p2:
-        if random.random() < TOURNAMENT_WIN_PROB:
-            p2winner = p2.pop()
-            break
-        p2winner = p2.pop()
-    return p1winner[1], p2winner[1]
+#     while p2:
+#         if random.random() < TOURNAMENT_WIN_PROB:
+#             p2winner = p2.pop()
+#             break
+#         p2winner = p2.pop()
+#     return p1winner[1], p2winner[1]
 
-def breed(p1, p2):
-    child = [''] * len(p1)
-    crossovers = random.sample(list(range(len(p1))), CROSSOVER_LOCATIONS)
-    for i in crossovers:
-        child[i] = p1[i]
+# def breed(p1, p2):
+#     child = [''] * len(p1)
+#     crossovers = random.randint(0, 3)
+#     for i in range(crossovers):
+#         child[i] = p1[i]
 
-    for letter in p2:
-        if letter in child:
-            continue
-        for i in range(len(child)):
-            if child[i] == '':
-                child[i] = letter
-                break
+#     for letter in range(len(p2) - 1 - crossovers):
+#         child[len(p2) - 1 - letter] = p2[letter]
 
 
-    if random.random() < MUTATION_RATE:
 
-        s1 = random.randint(0, len(child) - 1)
-        child[s1] *= random.uniform(-1, 1)
+#     if random.random() < MUTATION_RATE:
+
+#         s1 = random.randint(0, len(child) - 1)
+#         child[s1] += random.random() * 2
 
 
-    return tuple(child)
+#     return tuple(child)
+
+# def get_next_generation(pop):
+#     reversePop = {value : key for (key, value) in pop.items()}
+#     reversePop = dict(sorted(reversePop.items(), reverse=True))
+#     nextGen = dict()
+#     i = 0
+#     for key in reversePop.keys():
+#         if i >= NUM_CLONES:
+#             break
+#         nextGen[reversePop[key]] = fitness(reversePop[key])
+#         print(reversePop[key], '--->', nextGen[reversePop[key]])
+#         i += 1
+    
+#     while len(list(nextGen.keys())) < POPULATION_SIZE:
+#         p1, p2 = create_tournament(pop)
+#         child = breed(p1, p2)
+#         if child in nextGen.keys():
+#             continue
+        
+#         nextGen[child] = fitness(child)
+#         print(child, '---->', nextGen[child])
+    
+#     return nextGen
 
 def get_next_generation(pop):
+    nextGen = dict()
     reversePop = {value : key for (key, value) in pop.items()}
     reversePop = dict(sorted(reversePop.items(), reverse=True))
     nextGen = dict()
@@ -246,72 +312,73 @@ def get_next_generation(pop):
     for key in reversePop.keys():
         if i >= NUM_CLONES:
             break
-        nextGen[reversePop[key]] = key
+        nextGen[reversePop[key]] = fitness(reversePop[key])
+        print(reversePop[key], '--->', nextGen[reversePop[key]])
         i += 1
-    
-    while len(list(nextGen.keys())) < POPULATION_SIZE:
-        p1, p2 = create_tournament(pop)
-        child = breed(p1, p2)
-        if child in nextGen.keys():
-            continue
-        nextGen[child] = fitness(child)
-    
-    return nextGen
+    while len(nextGen.keys()) < POPULATION_SIZE:
+        tourney = random.sample()
+
 
 def get_best(pop):
     reversePop = {value : key for (key, value) in pop.items()}
     reversePop = dict(sorted(reversePop.items()))
     for key in reversed(list(reversePop.keys())):
-        print(reversePop[key], key)
+        print('Best:', reversePop[key], key)
         return [reversePop[key]], key
 
 def get_avg(gen):
     avg = 0
     for key in gen.keys():
         avg += gen[key]
-    print('gen', 'pop avg', avg/POPULATION_SIZE)
+    print('gen avg', avg / POPULATION_SIZE)
 
 currGen = None
 
-# while True:
-#     choice = input('(C)reate new, (S)ave, (L)oad, (G)enerate next, or (E)xit: ').lower()
-#     if choice == 'c':
-#         currGen = generate_starting_pop()
+while True:
+    choice = input('(C)reate new, (S)ave, (L)oad, (G)enerate next, or (E)xit: ').lower()
+    if choice == 'c':
+        currGen = generate_starting_pop()
+        get_best(currGen)
+        get_avg(currGen)
 
-#     elif choice == 's':
-#         if currGen == None:
-#             print('No generation to store!')
-#             sys.exit()
-#         f = input('File name: ')
-#         pickle.dump(currGen, open(f, 'wb'))
+    elif choice == 's':
+        if currGen == None:
+            print('No generation to store!')
+            sys.exit()
+        f = input('File name: ')
+        pickle.dump(currGen, open(f, 'wb'))
 
-#     elif choice == 'l':
-#         f = input('File name: ')
-#         currGen = pickle.load(open(f, 'rb'))
+    elif choice == 'l':
+        f = input('File name: ')
+        currGen = pickle.load(open(f, 'rb'))
+        get_best(currGen)
+        get_avg(currGen)
     
-#     elif choice == 'g':
-#         currGen = get_next_generation(currGen)
+    elif choice == 'g':
+        currGen = get_next_generation(currGen)
+        get_best(currGen)
+        get_avg(currGen)
     
-#     elif choice == 'e':
-#         sys.exit()
+    elif choice == 'e':
+        sys.exit()
     
-#     elif choice == 'get best':
-#         get_best(currGen)
+    elif choice == 'get best':
+        get_best(currGen)
 
 
 
-s = time.perf_counter()
-res = []
-for p in pieces.keys():
-    for position in range(10):
-        newBoard = place_block(test, p, position)
-        if newBoard != None: res.append(newBoard[0]) 
+# s = time.perf_counter()
+# res = []
+# for p in pieces.keys():
+#     for position in range(10):
+#         newBoard = place_block(test, p, position)
+#         if newBoard != None: res.append(newBoard[0]) 
 
-with open('tetrisout.txt', 'w') as f:
-    for r in res:
-        f.write(r + '\n')
+# with open('tetrisout.txt', 'w') as f:
+#     for r in res:
+#         f.write(r + '\n')
 
-print(time.perf_counter() - s)
+# print(time.perf_counter() - s)
 
 
 # currGen = generate_starting_pop()
