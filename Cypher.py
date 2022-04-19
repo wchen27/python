@@ -178,6 +178,8 @@ for i in range(500):
     print(get_best(nextGen))
     print(decode(get_best(nextGen)[0][0], encoded))
     print()
+    
+
 
 # print(nextGen)
 

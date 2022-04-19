@@ -3,13 +3,12 @@ import io
 from PIL import Image
 import random
 import time
+import sys
 
 s = time.perf_counter()
-# URL = 'https://images-ext-1.discordapp.net/external/HVXoHD-3CWjJ5XI6AbTMkV-462gbOFE4GA0AZbN3RZI/https/i.pinimg.com/originals/95/2a/04/952a04ea85a8d1b0134516c52198745e.jpg?width=453&height=675'
-# f = io.BytesIO(urllib.request.urlopen(URL).read()) 
-# img = Image.open(f)
-img = Image.open(r'C:\Users\Wilson\Downloads\swigglehat.jpg')
-img.show() 
+URL = sys.argv[1]
+f = io.BytesIO(urllib.request.urlopen(URL).read()) 
+img = Image.open(f)
 width, height = img.size
 pixels = img.load()
 
@@ -219,7 +218,7 @@ def kmeans_quant(k):
         for r in range(height, height + (width // k)):
             for c in range(i * (width // k), (i + 1) * (width // k)):
                 newPixels[c, r] = curr
-    newImg.show()
+    newImg.save(r'.\kmeansout.png')
 
 
     # for r in range(height, height + (width // k) - 1):
@@ -284,12 +283,14 @@ def kmeans_quant_dither(k):
             meanGroups[mean] = []
         i += 1
 
-    for key in meanGroups.keys():
-        points = meanGroups[key]
-        for point in points:
-            for pix in rgbs[point]:
-                a, b, c = int(key[0]), int(key[1]), int(key[2])
-                newPixels[pix] = a, b, c
+    # for key in meanGroups.keys():
+    #     points = meanGroups[key]
+    #     for point in points:
+    #         for pix in rgbs[point]:
+    #             a, b, c = int(key[0]), int(key[1]), int(key[2])
+    #             newPixels[pix] = a, b, c
+
+
     colors = list(meanGroups.keys())
     newColors = []
     for curr in colors:
@@ -304,10 +305,11 @@ def kmeans_quant_dither(k):
             newPixels[y, x] = newpix
             error = (curr[0] - newpix[0], curr[1] - newpix[1], curr[2] - newpix[2])
             try:
-                newPixels[y, x + 1] = (newpix[0] + error[0] * 7 // 16, newpix[1] + error[1] * 7 // 16, newpix[2] + error[2] * 7 // 16)
-                newPixels[y + 1, x - 1] = (newpix[0] + error[0] * 3 // 16, newpix[1] + error[1] * 3 // 16, newpix[2] + error[2] * 3 // 16)
-                newPixels[y + 1, x] = (newpix[0] + error[0] * 5 // 16, newpix[1] + error[1] * 5 // 16, newpix[2] + error[2] * 5 // 16)
-                newPixels[y + 1, x + 1] = (newpix[0] + error[0] * 1 // 16, newpix[1] + error[1] * 1 // 16, newpix[2] + error[2] * 1 // 16)
+                newPixels[y, x + 1] = (newPixels[y, x + 1][0] + error[0] * 7 // 16, newPixels[y, x + 1][1] + error[1] * 7 // 16, newPixels[y, x + 1][2] + error[2] * 7 // 16)
+                newPixels[y + 1, x - 1] = (newPixels[y + 1, x - 1][0] + error[0] * 3 // 16, newPixels[y + 1, x - 1][1] + error[1] * 3 // 16, newPixels[y + 1, x - 1][2] + error[2] * 3 // 16)
+                newPixels[y + 1, x] = (newPixels[y + 1, x][0] + error[0] * 5 // 16, newPixels[y + 1, x][1] + error[1] * 5 // 16, newPixels[y + 1, x][2] + error[2] * 5 // 16)
+                newPixels[y + 1, x + 1] = (newPixels[y + 1, x + 1][0] + error[0] // 16, newPixels[y + 1, x + 1][1] + error[1] // 16, newPixels[y + 1, x + 1][2] + error[2] // 16)
+                
             except IndexError:
                 continue
 
@@ -318,7 +320,7 @@ def kmeans_quant_dither(k):
         for r in range(height, height + (width // k)):
             for c in range(i * (width // k), (i + 1) * (width // k)):
                 newPixels[c, r] = curr
-    newImg.show()
+    newImg.show() 
 
 # s = time.perf_counter()
 # kmeans_quant(8)
@@ -330,4 +332,8 @@ def kmeans_quant_dither(k):
 # print('k++:', e2 - s2)
 # # 158 normal
 # # 
-kmeans_quant_dither(8)
+
+
+
+# BLUE CREDIT
+kmeans_quant(int(sys.argv[2]))
