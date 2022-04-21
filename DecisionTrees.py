@@ -55,7 +55,3 @@ def calc_expected_entropy(characteristic):
 
 def calc_information_gain(characteristic):
     return calc_starting_entropy(-1) - calc_expected_entropy(characteristic)
-
-print(calc_information_gain('Outlook'))
-print(calc_information_gain('Humidity'))
-print(calc_information_gain('Wind'))

@@ -55,6 +55,42 @@ def naive_quant(k):
                 newPixels[c, r] = curr
     newImg.show()
 
+def get_color_error(c1, c2):
+    r1, g1, b1 = c1
+    r2, g2, b2 = c2
+    return (r1 - r2, g1 - g2, b1 - b2)
+
+
+def naive_quant_dither(k):
+    newImg = Image.new("RGB", (width, height + (width // k)), 0)
+    newPixels = newImg.load()
+    
+    if k == 8:
+        colors = [(0, 0, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255), (255, 255, 255)]
+    elif k == 27:
+        # let colors be all combinations of 0, 127, 255
+        colors = [(0, 0, 0), (0, 127, 0), (0, 255, 0), (127, 0, 0), (127, 127, 0), (127, 255, 0), (255, 0, 0), (255, 127, 0), (255, 255, 0), (0, 0, 127), (0, 127, 127), (0, 255, 127), (127, 0, 127), (127, 127, 127), (127, 255, 127), (255, 0, 127), (255, 127, 127), (255, 255, 127), (0, 0, 255), (0, 127, 255), (0, 255, 255), (127, 0, 255), (127, 127, 255), (127, 255, 255), (255, 0, 255), (255, 127, 255), (255, 255, 255)]
+    for y in range(height):
+        for x in range(width):
+            oldpixel = pixels[x, y]
+            newpixel = find_closest_color(oldpixel, colors)
+            newPixels[x, y] = newpixel
+            quant_error = get_color_error(oldpixel, newpixel)
+            try:
+                pixels[x + 1, y] = (pixels[x + 1, y][0] + quant_error[0] * 7 // 16, pixels[x + 1, y][1] + quant_error[1] * 7 // 16, pixels[x + 1, y][2] + quant_error[2] * 7 // 16)
+                pixels[x - 1, y + 1] = (pixels[x - 1, y + 1][0] + quant_error[0] * 3 // 16, pixels[x - 1, y + 1][1] + quant_error[1] * 3 // 16, pixels[x - 1, y + 1][2] + quant_error[2] * 3 // 16)
+                pixels[x, y + 1] = (pixels[x, y + 1][0] + quant_error[0] * 5 // 16, pixels[x, y + 1][1] + quant_error[1] * 5 // 16, pixels[x, y + 1][2] + quant_error[2] * 5 // 16)
+                pixels[x + 1, y + 1] = (pixels[x + 1, y + 1][0] + quant_error[0] * 1 // 16, pixels[x + 1, y + 1][1] + quant_error[1] * 1 // 16, pixels[x + 1, y + 1][2] + quant_error[2] * 1 // 16)
+            except IndexError:
+                pass
+
+    for i in range(len(colors)):
+        curr = (int(colors[i][0]), int(colors[i][1]), int(colors[i][2]))
+        for r in range(height, height + (width // k)):
+            for c in range(i * (width // k), (i + 1) * (width // k)):
+                newPixels[c, r] = curr
+    newImg.show()
+
 def get_error(mean, color):
     m1, m2, m3 = mean
     s1, s2, s3 = color
@@ -290,22 +326,19 @@ def kmeans_quant_dither(k):
     colors = newColors
 
 
-    for x in range(height):
-        for y in range(width):
-            curr = pixels[y, x]
-            newpix = find_closest_color(curr, colors)
-            newPixels[y, x] = newpix
-            error = (curr[0] - newpix[0], curr[1] - newpix[1], curr[2] - newpix[2])
+    for y in range(height):
+        for x in range(width):
+            oldpixel = pixels[x, y]
+            newpixel = find_closest_color(oldpixel, colors)
+            newPixels[x, y] = newpixel
+            quant_error = get_color_error(oldpixel, newpixel)
             try:
-                newPixels[y, x + 1] = (newPixels[y, x + 1][0] + error[0] * 7 // 16, newPixels[y, x + 1][1] + error[1] * 7 // 16, newPixels[y, x + 1][2] + error[2] * 7 // 16)
-                newPixels[y + 1, x - 1] = (newPixels[y + 1, x - 1][0] + error[0] * 3 // 16, newPixels[y + 1, x - 1][1] + error[1] * 3 // 16, newPixels[y + 1, x - 1][2] + error[2] * 3 // 16)
-                newPixels[y + 1, x] = (newPixels[y + 1, x][0] + error[0] * 5 // 16, newPixels[y + 1, x][1] + error[1] * 5 // 16, newPixels[y + 1, x][2] + error[2] * 5 // 16)
-                newPixels[y + 1, x + 1] = (newPixels[y + 1, x + 1][0] + error[0] // 16, newPixels[y + 1, x + 1][1] + error[1] // 16, newPixels[y + 1, x + 1][2] + error[2] // 16)
-                
+                pixels[x + 1, y] = (pixels[x + 1, y][0] + quant_error[0] * 7 // 16, pixels[x + 1, y][1] + quant_error[1] * 7 // 16, pixels[x + 1, y][2] + quant_error[2] * 7 // 16)
+                pixels[x - 1, y + 1] = (pixels[x - 1, y + 1][0] + quant_error[0] * 3 // 16, pixels[x - 1, y + 1][1] + quant_error[1] * 3 // 16, pixels[x - 1, y + 1][2] + quant_error[2] * 3 // 16)
+                pixels[x, y + 1] = (pixels[x, y + 1][0] + quant_error[0] * 5 // 16, pixels[x, y + 1][1] + quant_error[1] * 5 // 16, pixels[x, y + 1][2] + quant_error[2] * 5 // 16)
+                pixels[x + 1, y + 1] = (pixels[x + 1, y + 1][0] + quant_error[0] * 1 // 16, pixels[x + 1, y + 1][1] + quant_error[1] * 1 // 16, pixels[x + 1, y + 1][2] + quant_error[2] * 1 // 16)
             except IndexError:
-                continue
-
-
+                pass
 
     for i in range(len(colors)):
         curr = (int(colors[i][0]), int(colors[i][1]), int(colors[i][2]))
@@ -328,6 +361,4 @@ def kmeans_quant_dither(k):
 
 
 # BLUE CREDIT
-kmeans_quant(int(sys.argv[2]))
-
-
+kmeans_quant_dither(8)
