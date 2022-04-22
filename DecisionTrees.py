@@ -55,3 +55,44 @@ def calc_expected_entropy(characteristic):
 
 def calc_information_gain(characteristic):
     return calc_starting_entropy(-1) - calc_expected_entropy(characteristic)
+
+def make_tree(c, cl):
+    # find best attribute to split on
+    best_gain = 0
+    best_attribute = -1
+    for i in range(len(c)):
+        gain = calc_information_gain(c[i])
+        if gain > best_gain:
+            best_gain = gain
+            best_attribute = i
+
+    #split on best attribute
+    tree = {c[best_attribute]:{}}
+    remaining_characteristics = c[:]
+    remaining_characteristics.remove(c[best_attribute])
+def make_tree(c, cl):
+    # find best attribute to split on
+    best_gain = 0
+    best_attribute = -1
+    for i in range(len(c)):
+        gain = calc_information_gain(c[i])
+        if gain > best_gain:
+            best_gain = gain
+            best_attribute = i
+
+    #split on best attribute
+    tree = {c[best_attribute]:{}}
+    remaining_characteristics = c[:]
+    remaining_characteristics.remove(c[best_attribute])
+    for value in set(row[best_attribute] for row in cl):
+        tree[c[best_attribute]][value] = make_tree(remaining_characteristics, [row for row in cl if row[best_attribute] == value])
+    return tree
+
+
+def display_tree(tree):
+    for key in tree:
+        print(key)
+        for key2 in tree[key]:
+            print('\t', key2, tree[key][key2])
+
+display_tree(make_tree(header[:-1], data))

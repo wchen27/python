@@ -131,16 +131,8 @@ def kmeanspp_quant(k):
                 break
         if len(means) == k:
             break
-    
-
-        
-
-        
         
     means = list(means)
-    # while len(means) < k:
-    #     means.add(pixels[random.randint(0, width - 1), random.randint(0, height - 1)])
-    # means = list(means)
 
     # k-means++ means selection
     
