@@ -1,0 +1,33 @@
+* odor 
+  * ALMOND --> EDIBLE
+  * ANISE --> EDIBLE
+  * CREOSOTE --> POISONOUS
+  * FISHY --> POISONOUS
+  * FOUL --> POISONOUS
+  * MUSTY --> POISONOUS
+  * NONE 
+    * spore-print-color 
+      * BLACK --> EDIBLE
+      * BROWN --> EDIBLE
+      * BUFF --> EDIBLE
+      * CHOCOLATE --> EDIBLE
+      * GREEN --> POISONOUS
+      * ORANGE --> EDIBLE
+      * WHITE 
+        * habitat 
+          * GRASSES --> EDIBLE
+          * LEAVES 
+            * cap-color 
+              * BROWN --> EDIBLE
+              * CINNAMON --> EDIBLE
+              * WHITE --> POISONOUS
+              * YELLOW --> POISONOUS
+          * PATHS --> EDIBLE
+          * WASTE --> EDIBLE
+          * WOODS 
+            * gill-size 
+              * BROAD --> EDIBLE
+              * NARROW --> POISONOUS
+      * YELLOW --> EDIBLE
+  * PUNGENT --> POISONOUS
+  * SPICY --> POISONOUS

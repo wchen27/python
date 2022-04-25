@@ -1,8 +1,8 @@
 import math
+import sys
 
-with open('play_tennis.csv', 'r') as f:
+with open('mushroom.csv', 'r') as f:
     lines = [line.strip().split(',') for line in f.readlines()]
-    # make a dictionary with key as first row and value as column
     header = lines[0]
     data = lines[1:]
 
@@ -36,11 +36,11 @@ def calc_entropy(characteristic, cl):
         entropy -= p * math.log2(p)
     return entropy
 
-def calc_expected_entropy(characteristic):
+def calc_expected_entropy(characteristic, rows):
     characteristic = header.index(characteristic)
     counts = {}
     newRows = {}
-    for row in data:
+    for row in rows:
         value = row[characteristic]
         if value not in counts:
             counts[value] = 0
@@ -53,46 +53,34 @@ def calc_expected_entropy(characteristic):
         expected_entropy += p * calc_entropy(-1, newRows[value])
     return expected_entropy
 
-def calc_information_gain(characteristic):
-    return calc_starting_entropy(-1) - calc_expected_entropy(characteristic)
+def calc_information_gain(characteristic, rows):
+    return calc_entropy(header[-1], rows) - calc_expected_entropy(characteristic, rows)
 
-def make_tree(c, cl):
-    # find best attribute to split on
-    best_gain = 0
-    best_attribute = -1
-    for i in range(len(c)):
-        gain = calc_information_gain(c[i])
-        if gain > best_gain:
-            best_gain = gain
-            best_attribute = i
-
-    #split on best attribute
-    tree = {c[best_attribute]:{}}
-    remaining_characteristics = c[:]
-    remaining_characteristics.remove(c[best_attribute])
-def make_tree(c, cl):
-    # find best attribute to split on
-    best_gain = 0
-    best_attribute = -1
-    for i in range(len(c)):
-        gain = calc_information_gain(c[i])
-        if gain > best_gain:
-            best_gain = gain
-            best_attribute = i
-
-    #split on best attribute
-    tree = {c[best_attribute]:{}}
-    remaining_characteristics = c[:]
-    remaining_characteristics.remove(c[best_attribute])
-    for value in set(row[best_attribute] for row in cl):
-        tree[c[best_attribute]][value] = make_tree(remaining_characteristics, [row for row in cl if row[best_attribute] == value])
+def build_tree(characteristics, rows):
+    best_characteristic = max(characteristics, key=lambda x: calc_information_gain(x, rows))
+    tree = {best_characteristic:{}}
+    remaining_characteristics = [c for c in characteristics if c != best_characteristic]
+    values = sorted(list(set([row[header.index(best_characteristic)] for row in rows])))
+    for value in values:
+        new_rows = [row for row in rows if row[header.index(best_characteristic)] == value]
+        if calc_entropy(-1, new_rows) == 0:
+            tree[best_characteristic][value] = new_rows[0][-1]
+        else:
+            subtree = build_tree(remaining_characteristics, new_rows)
+            tree[best_characteristic][value] = subtree
     return tree
 
-
-def display_tree(tree):
+def display_tree(tree, indent):
     for key in tree:
-        print(key)
-        for key2 in tree[key]:
-            print('\t', key2, tree[key][key2])
+        print('  ' * indent + '*', key, end=' ')
+        if type(tree[key]) == dict:
+            print()
+            display_tree(tree[key], indent + 1)
+        else:
+            print('-->', tree[key])
 
-display_tree(make_tree(header[:-1], data))
+print_stream = sys.stdout
+with open('treeout.txt', 'w') as f:
+    sys.stdout = f
+    display_tree(build_tree(header[:-1], data), 0)
+    sys.stdout = print_stream
