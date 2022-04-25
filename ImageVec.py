@@ -6,8 +6,9 @@ import time
 import sys
 
 s = time.perf_counter()
-URL = sys.argv[1]
-f = io.BytesIO(urllib.request.urlopen(URL).read()) 
+# URL = sys.argv[1]
+# f = io.BytesIO(urllib.request.urlopen(URL).read()) 
+f = r'C:\Users\Wilson\Downloads\swigglehat.jpg'
 img = Image.open(f)
 width, height = img.size
 pixels = img.load()
@@ -350,7 +351,5 @@ def kmeans_quant_dither(k):
 # # 158 normal
 # # 
 
-
-
-# BLUE CREDIT
 kmeans_quant_dither(8)
+kmeans_quant_dither(27)
