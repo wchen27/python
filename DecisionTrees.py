@@ -1,5 +1,6 @@
 import math
 import sys
+import matplotlib.pyplot as plt
 
 with open('mushroom.csv', 'r') as f:
     lines = [line.strip().split(',') for line in f.readlines()]
@@ -79,8 +80,11 @@ def display_tree(tree, indent):
         else:
             print('-->', tree[key])
 
-print_stream = sys.stdout
-with open('treeout.txt', 'w') as f:
-    sys.stdout = f
-    display_tree(build_tree(header[:-1], data), 0)
-    sys.stdout = print_stream
+
+
+
+# print_stream = sys.stdout
+# with open('treeout.txt', 'w') as f:
+#     sys.stdout = f
+#     display_tree(build_tree(header[:-1], data), 0)
+#     sys.stdout = print_stream
