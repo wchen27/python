@@ -30,8 +30,7 @@ def step(num):
 def perceptron(A, w, b, x):
     return A(dot(w, x) + b)
 
-def check(n, w, b):
-    table = truth_table(len(w), n)
+def check(table, w, b):
     ncorrect = 0
     for x in table.keys():
         correct = table[x]
@@ -60,7 +59,7 @@ def calc_curr_output(w, b, x):
 
 def update(w, b, x, l, table):
     correct = table[x]
-    diff = calc_curr_output(w, b, x) - correct
+    diff = correct - calc_curr_output(w, b, x)
     nw = add(w, mult(x, l * diff))
     nb = l
     nb += l * diff
@@ -73,19 +72,20 @@ def generate_all_tables(n):
     return tables
 
 def train(table):
-    w = [0] * len(list(tbl[0].keys())[0])
+    w = [0] * len(list(table.keys())[0])
     b = 0
-    for i in range(NUM_EPOCHS):
+    for _ in range(NUM_EPOCHS):
         pw, pb = w, b
         for x in table.keys():
             w, b = update(w, b, x, 1, table)
         if (w, b) == (pw, pb):
             break
         pw, pb = w, b
-    print(w, b)
-    print(check(2 ** len(w) - 1, w, b))
+    return w, b, check(table, w, b)
 
 if __name__ == '__main__':
-    tbl = generate_all_tables(2)
-    for table in tbl:
-        train(table)
+    bits, n = sys.argv[1:]
+    w, b, acc = train(truth_table(int(bits), int(n)))
+    print('Weights:', w)
+    print('Bias:', b)
+    print('Accuracy:', acc)
