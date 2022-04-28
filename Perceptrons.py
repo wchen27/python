@@ -1,3 +1,4 @@
+import numpy as np
 import sys
 import ast
 
@@ -96,12 +97,30 @@ def xor(inp):
     out = perceptron(step, w3, b3, (v1, v2))
     return out
 
+def p_net(A, x, w_list, b_list):
+    vA = np.vectorize(A)
+    a = x
+    for i in range(1, len(w_list)):
+        a = vA(a@w_list[i] + b_list[i])
+    return a
 
+# XOR HAPPENS HERE (matrix)
+def xor_matrix(inp):
+    w1 = np.array([[-1, 1], [-2, 1]])
+    b1 = np.array([[3, 0]])
+    w2 = np.array([[1, 2]])
+    b2 = np.array([[-2]])
+    return (p_net(step, inp, [None, w1, w2], [None, b1, b2]))
 
 if __name__ == '__main__':
+    # Perceptrons 1
+    # args = sys.argv[1:]
+    # n = int(args[0])
+    # w = ast.literal_eval(args[1])
+    # b = float(args[2])
+    # print(check(truth_table(len(w), n), w, b))
 
     # Perceptrons 2
-
     # bits, n = sys.argv[1:]
     # w, b, acc = train(truth_table(int(bits), int(n)))
     # print('Weights:', w)
@@ -110,8 +129,12 @@ if __name__ == '__main__':
 
 
     # XOR
+    # inp = sys.argv[1]
+    # inp = ast.literal_eval(inp)
+    # print(xor(inp)) 
+
+    # XOR Matrix
     inp = sys.argv[1]
     inp = ast.literal_eval(inp)
-    print(xor(inp)) 
-
+    print(xor_matrix(inp)[0])
     
