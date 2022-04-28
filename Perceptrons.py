@@ -61,8 +61,7 @@ def update(w, b, x, l, table):
     correct = table[x]
     diff = correct - calc_curr_output(w, b, x)
     nw = add(w, mult(x, l * diff))
-    nb = l
-    nb += l * diff
+    nb = b + l * diff
     return nw, nb
 
 def generate_all_tables(n):
@@ -74,13 +73,13 @@ def generate_all_tables(n):
 def train(table):
     w = [0] * len(list(table.keys())[0])
     b = 0
+    old = (w, b)
     for _ in range(NUM_EPOCHS):
-        pw, pb = w, b
         for x in table.keys():
             w, b = update(w, b, x, 1, table)
-        if (w, b) == (pw, pb):
+        if old == (w, b):
             break
-        pw, pb = w, b
+        old = (w, b)
     return w, b, check(table, w, b)
 
 if __name__ == '__main__':
