@@ -82,9 +82,36 @@ def train(table):
         old = (w, b)
     return w, b, check(table, w, b)
 
+
+# XOR HAPPENS HERE
+def xor(inp):
+    p1 = train(truth_table(2, 7))
+    p2 = train(truth_table(2, 14))
+    p3 = train(truth_table(2, 8))
+    w1, b1, _ = p1
+    w2, b2, _ = p2
+    w3, b3, _ = p3
+    v1 = perceptron(step, w1, b1, inp)
+    v2 = perceptron(step, w2, b2, inp)
+    out = perceptron(step, w3, b3, (v1, v2))
+    return out
+
+
+
 if __name__ == '__main__':
-    bits, n = sys.argv[1:]
-    w, b, acc = train(truth_table(int(bits), int(n)))
-    print('Weights:', w)
-    print('Bias:', b)
-    print('Accuracy:', acc)
+
+    # Perceptrons 2
+
+    # bits, n = sys.argv[1:]
+    # w, b, acc = train(truth_table(int(bits), int(n)))
+    # print('Weights:', w)
+    # print('Bias:', b)
+    # print('Accuracy:', acc)
+
+
+    # XOR
+    inp = sys.argv[1]
+    inp = ast.literal_eval(inp)
+    print(xor(inp)) 
+
+    
