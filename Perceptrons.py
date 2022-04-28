@@ -1,5 +1,7 @@
 import numpy as np
+import random
 import sys
+import math
 import ast
 
 NUM_EPOCHS = 100
@@ -27,6 +29,9 @@ def step(num):
     if num > 0:
         return 1
     return 0
+
+def sigmoid(num):
+    return 1 / (1 + math.exp(-num))
 
 def perceptron(A, w, b, x):
     return A(dot(w, x) + b)
@@ -108,9 +113,29 @@ def p_net(A, x, w_list, b_list):
 def xor_matrix(inp):
     w1 = np.array([[-1, 1], [-2, 1]])
     b1 = np.array([[3, 0]])
-    w2 = np.array([[1, 2]])
+    w2 = np.array([[1], [2]])
     b2 = np.array([[-2]])
-    return (p_net(step, inp, [None, w1, w2], [None, b1, b2]))
+    return p_net(step, inp, [None, w1, w2], [None, b1, b2])
+
+def diamond(inp):
+    w1 = np.array([[-1, 1, 1, -1], [-1, 1, -1, 1]])
+    b1 = np.array([[1, 1, 1, 1]])
+    w2 = np.array([[1], [1], [1], [1]])
+    b2 = np.array([[-3]])
+    return p_net(step, inp, [None, w1, w2], [None, b1, b2])
+
+def circle(inp):
+    w1 = np.array([[-1, 1, 1, -1], [-1, 1, -1, 1]])
+    b1 = np.array([[1.57079] * 4])
+    w2 = np.array([[1], [1], [1], [1]])
+    b2 = np.array([[-3.14159]])
+    vecRound = np.vectorize(round)
+    return vecRound(p_net(sigmoid, inp, [None, w1, w2], [None, b1, b2]))
+
+def inside(x, y):
+    if ((x) ** 2 + (y) ** 2) ** (1/2) < 1:
+        return 1
+    return 0
 
 if __name__ == '__main__':
     # Perceptrons 1
@@ -133,8 +158,28 @@ if __name__ == '__main__':
     # inp = ast.literal_eval(inp)
     # print(xor(inp)) 
 
-    # XOR Matrix
-    inp = sys.argv[1]
-    inp = ast.literal_eval(inp)
-    print(xor_matrix(inp)[0])
+    # Perceptrons 4
+    args = len(sys.argv)
+    if args == 2:
+        # XOR Matrix
+        inp = sys.argv[1]
+        inp = ast.literal_eval(inp)
+        print(xor_matrix(inp)[0])
+    if args == 3:
+        # Diamond
+        x = float(sys.argv[1])
+        y = float(sys.argv[2])
+        print('outside') if inside(x, y) == 0 else print('inside')
     
+    if args == 1:
+        # Circle
+        points = []
+        for i in range(500):
+            x = random.uniform(-1, 1)
+            y = random.uniform(-1, 1)
+            points.append((x, y))
+        correct = 0
+        for point in points:
+            if inside(point[0], point[1]) == circle(point):
+                correct += 1
+        print(correct / 500)
