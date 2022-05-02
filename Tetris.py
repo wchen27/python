@@ -1,10 +1,10 @@
-import sys, random, heapq, pickle
+import sys, random, heapq, pickle, ast
 
 
-POPULATION_SIZE = 500
-NUM_CLONES = 50
-TOURNAMENT_SIZE = 50
-TOURNAMENT_WIN_PROB = .8
+POPULATION_SIZE = 100
+NUM_CLONES = 10
+TOURNAMENT_SIZE = 10
+TOURNAMENT_WIN_PROB = .75
 CROSSOVER_LOCATIONS = 2
 MUTATION_RATE = 0.8
 STRATEGY_LENGTH = 4
@@ -228,163 +228,88 @@ def fitness(strategy):
         scores.append(play_game(strategy))
     return sum(scores) / 5
 
-def generate_starting_pop():
-    pop = dict()
-    while len(list(pop.keys())) < POPULATION_SIZE:
-        strategy = []
-        for _ in range(STRATEGY_LENGTH):
-            strategy.append(random.uniform(-1, 1))
-        
-        pop[tuple(strategy)] = fitness(strategy)
-        print(tuple(strategy), '--->', pop[tuple(strategy)])
-    return pop
+def tourneySort(t, popDict):
+    tDict = {}
+    for i in t:
+        tDict[i] = popDict[i]
+    return dict(sorted(tDict.items(), key=lambda x: x[1], reverse=True))
 
-# def create_tournament(pop):
-#     popList = []
-#     for key, val in pop.items():
-#         popList.append((val, key))
-#     tournamentPop = random.sample(popList, TOURNAMENT_SIZE * 2)
-#     random.shuffle(tournamentPop)
-#     p1 = tournamentPop[:TOURNAMENT_SIZE]
-#     p2 = tournamentPop[TOURNAMENT_SIZE:]
-#     p1.sort() ; p2.sort()
-#     while p1:
-#         if random.random() < TOURNAMENT_WIN_PROB:
-#             p1winner = p1.pop()
-#             break
-#         p1winner = p1.pop()
-
-#     while p2:
-#         if random.random() < TOURNAMENT_WIN_PROB:
-#             p2winner = p2.pop()
-#             break
-#         p2winner = p2.pop()
-#     return p1winner[1], p2winner[1]
-
-# def breed(p1, p2):
-#     child = [''] * len(p1)
-#     crossovers = random.randint(0, 3)
-#     for i in range(crossovers):
-#         child[i] = p1[i]
-
-#     for letter in range(len(p2) - 1 - crossovers):
-#         child[len(p2) - 1 - letter] = p2[letter]
-
-
-
-#     if random.random() < MUTATION_RATE:
-
-#         s1 = random.randint(0, len(child) - 1)
-#         child[s1] += random.random() * 2
-
-
-#     return tuple(child)
-
-# def get_next_generation(pop):
-#     reversePop = {value : key for (key, value) in pop.items()}
-#     reversePop = dict(sorted(reversePop.items(), reverse=True))
-#     nextGen = dict()
-#     i = 0
-#     for key in reversePop.keys():
-#         if i >= NUM_CLONES:
-#             break
-#         nextGen[reversePop[key]] = fitness(reversePop[key])
-#         print(reversePop[key], '--->', nextGen[reversePop[key]])
-#         i += 1
-    
-#     while len(list(nextGen.keys())) < POPULATION_SIZE:
-#         p1, p2 = create_tournament(pop)
-#         child = breed(p1, p2)
-#         if child in nextGen.keys():
-#             continue
-        
-#         nextGen[child] = fitness(child)
-#         print(child, '---->', nextGen[child])
-    
-#     return nextGen
-
-def get_next_generation(pop):
-    nextGen = dict()
-    reversePop = {value : key for (key, value) in pop.items()}
-    reversePop = dict(sorted(reversePop.items(), reverse=True))
-    nextGen = dict()
+def get_next_gen(popDict):
+    currGen = list(popDict.keys())
+    nextGen = []
     i = 0
-    for key in reversePop.keys():
-        if i >= NUM_CLONES:
-            break
-        nextGen[reversePop[key]] = fitness(reversePop[key])
-        print(reversePop[key], '--->', nextGen[reversePop[key]])
+    # Clone
+    popDict = dict(sorted(popDict.items(), key=lambda x: x[1], reverse=True))
+    for temp in popDict.keys():
+        nextGen.append(temp)
         i += 1
-    while len(nextGen.keys()) < POPULATION_SIZE:
-        tourney = random.sample()
+        if i > NUM_CLONES:
+            break
+    
+    while len(nextGen) < POPULATION_SIZE:
+        tournament = random.sample(currGen, TOURNAMENT_SIZE * 2)
+        t1, t2 = tournament[:TOURNAMENT_SIZE], tournament[TOURNAMENT_SIZE:]
+        st1, st2 = tourneySort(t1, popDict), tourneySort(t2, popDict)
+
+        for i in st1.keys():
+            if random.random() < TOURNAMENT_WIN_PROB:
+                w1 = i
+                break
+            w1 = i
+        
+        for i in st2.keys():
+            if random.random() < TOURNAMENT_WIN_PROB:
+                w2 = i
+                break
+            w2 = i
+        
+        currChild = []
+        index = random.randint(1, len(w1) - 1)
+        for i in range(index):
+            currChild.append(w1[i])
+        for i in range(4 - index):
+            currChild.append(w2[i + index])
+        if random.random() < MUTATION_RATE:
+            currChild[random.randint(0, len(currChild) - 1)] += random.uniform(-1, 1)
+        
+        if currChild not in nextGen:
+            nextGen.append(currChild)
+    nGenDict = {}
+    for i in nextGen:
+        nGenDict[tuple(i)] = fitness(i)
+        print(i, '-->', nGenDict[tuple(i)])
+    return nGenDict
 
 
-def get_best(pop):
-    reversePop = {value : key for (key, value) in pop.items()}
-    reversePop = dict(sorted(reversePop.items()))
-    for key in reversed(list(reversePop.keys())):
-        print('Best:', reversePop[key], key)
-        return [reversePop[key]], key
+def get_starting_pop():
+    popDict = {(-0.2614107140633857, -0.006584236991838077, -0.0071516307949968105, 0.8664056579796462) : fitness((-0.2614107140633857, -0.006584236991838077, -0.0071516307949968105, 0.8664056579796462))}
+    while len(popDict) < POPULATION_SIZE:
+        child = []
+        for i in range(4):
+            child.append(random.uniform(-1, 1))
+        if tuple(child) not in popDict.keys():
+            popDict[tuple(child)] = (ft := fitness(tuple(child)) )
+            print(child, '-->', ft)
+    return popDict
 
 def get_avg(gen):
     avg = 0
-    for key in gen.keys():
-        avg += gen[key]
-    print('gen avg', avg / POPULATION_SIZE)
+    for i in gen:
+        avg += gen[i]
+    return avg / len(gen)
 
-currGen = None
+args = len(sys.argv)
+if (args) > 1:
+    with open(sys.argv[1], 'r') as f:
+        nextGen = ast.literal_eval(f.read())
+        nextGen = get_next_gen(nextGen)
 
-while True:
-    choice = input('(C)reate new, (S)ave, (L)oad, (G)enerate next, or (E)xit: ').lower()
-    if choice == 'c':
-        currGen = generate_starting_pop()
-        get_best(currGen)
-        get_avg(currGen)
+    with open(sys.argv[1], 'w') as f:
+        print(nextGen, file=f)
 
-    elif choice == 's':
-        if currGen == None:
-            print('No generation to store!')
-            sys.exit()
-        f = input('File name: ')
-        pickle.dump(currGen, open(f, 'wb'))
-
-    elif choice == 'l':
-        f = input('File name: ')
-        currGen = pickle.load(open(f, 'rb'))
-        get_best(currGen)
-        get_avg(currGen)
-    
-    elif choice == 'g':
-        currGen = get_next_generation(currGen)
-        get_best(currGen)
-        get_avg(currGen)
-    
-    elif choice == 'e':
-        sys.exit()
-    
-    elif choice == 'get best':
-        get_best(currGen)
-
-
-
-# s = time.perf_counter()
-# res = []
-# for p in pieces.keys():
-#     for position in range(10):
-#         newBoard = place_block(test, p, position)
-#         if newBoard != None: res.append(newBoard[0]) 
-
-# with open('tetrisout.txt', 'w') as f:
-#     for r in res:
-#         f.write(r + '\n')
-
-# print(time.perf_counter() - s)
-
-
-# currGen = generate_starting_pop()
-# for _ in range(100):
-#     currGen = get_next_generation(currGen)
-
-# f = input('File name: ')
-# pickle.dump(currGen, open(f, 'wb'))
-
+else:
+    startingGen = get_starting_pop()
+    print(get_avg(startingGen))
+    nextGen = get_next_gen(startingGen)
+    with open('tetris.txt', 'w') as f:
+        print(nextGen, file=f)
