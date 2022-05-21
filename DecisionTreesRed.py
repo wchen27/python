@@ -8,8 +8,15 @@ with open('house-votes-84.csv', 'r') as f:
     header = lines[0]
     data = lines[1:]
     nonmissing = [line for line in data if not '?' in line]
+    missing = [line for line in data if '?' in line]
+    random.shuffle(nonmissing)
     test_set = nonmissing[-50:]
     training_set = nonmissing[:-50]
+    possible_classifications = set()
+    for row in nonmissing:
+        possible_classifications.add(row[-1])
+    possible_classifications = list(possible_classifications)
+
 
 def calc_starting_entropy(characteristic):
     if type(characteristic) != int:
@@ -69,8 +76,13 @@ def build_tree(characteristics, rows):
     for value in values:
         new_rows = [row for row in rows if row[header.index(best_characteristic)] == value]
         if calc_entropy(-1, new_rows) == 0:
+            print('1')
             tree[best_characteristic][value] = new_rows[0][-1]
+        elif calc_entropy(-1, new_rows) > 0 and calc_entropy(-1, rows) == calc_entropy(-1, new_rows):
+            print('\t2')
+            tree[best_characteristic][value] = random.choice(possible_classifications)
         else:
+            print('3')
             subtree = build_tree(remaining_characteristics, new_rows)
             tree[best_characteristic][value] = subtree
     return tree
@@ -93,8 +105,8 @@ def classify(tree, row):
             else:
                 return tree[key][value]
 
-def learn(size):
-    training = random.sample(training_set, size)
+def learn(size, ts):
+    training = random.sample(ts, size)
     tree = build_tree(header[1:-1], training)
     success = 0
     for vec in test_set:
@@ -103,16 +115,42 @@ def learn(size):
             success += 1
     return success / len(test_set) * 100
 
-def fill_missing(row, rows):
-    counts = {}
-    for r in rows:
-        pass
 
+def fill_missing(row, data):
+    missing = row.index('?')
+    classification = row[-1]
+    counts = dict()
+    for r in data:
+        if r[-1] != classification:
+            continue
+        if r[missing] not in counts.keys():
+            counts[r[missing]] = 0
+        counts[r[missing]] += 1
+    mval = -1
+    final = None
+    for key in counts.keys():
+        if counts[key] > mval:
+            mval = counts[key]
+            final = key
+    row[missing] = final
+    return row
+
+def complete_data_set(m, nm):
+    final_dataset = nm.copy()
+    for r in m:
+        final_dataset.append(fill_missing(r, nm))        
+    return final_dataset
+
+# comp_data = complete_data_set(missing, nonmissing)
+
+# print(len(comp_data))
+# test_set = comp_data[-50:]
+# training_set = comp_data[:-50]
 sizes = []
 accuracies = []
-for i in range(5, 182):
+for i in range(5, 10):
     print('Size:', i)
-    print('Accuracy:', (a := learn(i)))
+    print('Accuracy:', (a := learn(i, training_set)))
     print()
     sizes.append(i)
     accuracies.append(a)
