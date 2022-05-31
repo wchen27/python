@@ -9,28 +9,21 @@ alphabet.add('eps')
 
 modifiers = {'*', '+', '?'}
 
-def NFAe(exp):
-    NFAe = {exp : (1,)}
-    status = True
-    while status:
-        newNFAe = NFAe.copy()
-        for key in NFAe.keys():
-            if key not in alphabet:
-                break
-            return NFAe
-        
-        for key in NFAe.keys():
-            currVal = NFAe[key]
-            if '|' in key:
-                del newNFAe[key]
-                orSplit = key.split('|')
-                for newKey in orSplit:
-                    newNFAe[newKey] = currVal
-            
-            elif len(key) == 2 and key[-1] in modifiers:
-                pass
+def split(exp):
 
-        
-        NFAe = newNFAe
+    dfae = dict()
+    dfae[0] = {exp : 1}
 
-print(NFAe('a|b'))
+    # split on or
+    orBranches = exp.split('|')
+    if len(orBranches) > 1:
+        dfae = {0 : {}}
+        for branch in orBranches:
+            dfae[0][branch] = 1
+
+    currNode = 2
+
+    return dfae
+
+
+print(split('ab|b'))

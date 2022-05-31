@@ -2,7 +2,7 @@ import math
 import sys
 import matplotlib.pyplot as plt
 
-with open('mushroom.csv', 'r') as f:
+with open(sys.argv[1], 'r') as f:
     lines = [line.strip().split(',') for line in f.readlines()]
     header = lines[0]
     data = lines[1:]

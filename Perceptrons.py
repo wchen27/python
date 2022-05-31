@@ -33,6 +33,9 @@ def step(num):
 def sigmoid(num):
     return 1 / (1 + math.exp(-num))
 
+def sigmoidderiv(x):
+    return sigmoid(x) * (1 - sigmoid(x))
+
 def perceptron(A, w, b, x):
     return A(dot(w, x) + b)
 
@@ -104,9 +107,9 @@ def xor(inp):
 
 def p_net(A, x, w_list, b_list):
     vA = np.vectorize(A)
-    a = x
+    a = [x]
     for i in range(1, len(w_list)):
-        a = vA(a@w_list[i] + b_list[i])
+        a.append(vA(a@w_list[i] + b_list[i]))
     return a
 
 # XOR HAPPENS HERE (matrix)
@@ -137,6 +140,48 @@ def inside(x, y):
         return 1
     return 0
 
+def calc_error(x, y, wList, bList):
+    a = p_net(sigmoid, x, wList, bList)[-1][0]
+    error = 0
+    for i in range(len(y[0])):
+        error += (y[0][i] - a[i]) ** 2
+    return error / 2 
+
+def back_prop_epoch(x, y, wList, bList, lr):
+    network = p_net(sigmoid, x, wList, bList)
+    final = network[-1]
+    deltas = [final * (1 - final) * (y - final)]
+    for i in range(len(wList) - 1, -1, -1):
+        L = network[i] * (1 - network[i]) * (deltas[0] @ (wList[i].transpose()))
+        deltas = [L] + deltas
+    for i in range(len(deltas) - 1):
+        bList[i] = bList[i] + lr * deltas[i + 1]
+        wList[i] = wList[i] + lr * (network[i]).transpose() @ deltas[i + 1]
+    return (wList, bList)
+
+def back_prop(training_set, wList, bList, lr, num_epochs):
+    for i in range(num_epochs):
+        print(i)
+        for x, y in training_set:
+            wList, bList = back_prop_epoch(x, y, wList, bList, lr)
+        print(i)
+    return wList, bList
+
+def train_sum():
+    w1 = np.array([[random.random()*2-1, random.random()*2-1], [random.random()*2-1, random.random()*2-1]])
+    w2 = np.array([[random.random()*2-1, random.random()*2-1], [random.random()*2-1, random.random()*2-1]])
+    b1 = np.array([[random.random()*2-1, random.random()*2-1]])
+    b2 = np.array([[random.random()*2-1, random.random()*2-1]])
+    wList = [w1, w2]
+    bList = [b1, b2]
+    inputs = [(0, 0), (0, 1), (1, 0), (1,1)]
+    outputs = [(0, 0), (0, 1), (0, 1), (1, 0)]
+    training_set = []
+    for i in range(len(inputs)):
+        training_set.append((np.array([inputs[i]]), np.array([outputs[i]]))) 
+    back_prop(training_set, wList, bList, 0.2, 8000)
+
+
 if __name__ == '__main__':
     # Perceptrons 1
     # args = sys.argv[1:]
@@ -159,27 +204,28 @@ if __name__ == '__main__':
     # print(xor(inp)) 
 
     # Perceptrons 4
-    args = len(sys.argv)
-    if args == 2:
-        # XOR Matrix
-        inp = sys.argv[1]
-        inp = ast.literal_eval(inp)
-        print(xor_matrix(inp)[0])
-    if args == 3:
-        # Diamond
-        x = float(sys.argv[1])
-        y = float(sys.argv[2])
-        print('outside') if inside(x, y) == 0 else print('inside')
+    # args = len(sys.argv)
+    # if args == 2:
+    #     # XOR Matrix
+    #     inp = sys.argv[1]
+    #     inp = ast.literal_eval(inp)
+    #     print(xor_matrix(inp)[0])
+    # if args == 3:
+    #     # Diamond
+    #     x = float(sys.argv[1])
+    #     y = float(sys.argv[2])
+    #     print('outside') if inside(x, y) == 0 else print('inside')
     
-    if args == 1:
-        # Circle
-        points = []
-        for i in range(500):
-            x = random.uniform(-1, 1)
-            y = random.uniform(-1, 1)
-            points.append((x, y))
-        correct = 0
-        for point in points:
-            if inside(point[0], point[1]) == circle(point):
-                correct += 1
-        print(correct / 500)
+    # if args == 1:
+    #     # Circle
+    #     points = []
+    #     for i in range(500):
+    #         x = random.uniform(-1, 1)
+    #         y = random.uniform(-1, 1)
+    #         points.append((x, y))
+    #     correct = 0
+    #     for point in points:
+    #         if inside(point[0], point[1]) == circle(point):
+    #             correct += 1
+    #     print(correct / 500)
+    train_sum()

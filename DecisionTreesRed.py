@@ -3,7 +3,7 @@ import random
 import sys
 import matplotlib.pyplot as plt
 
-with open('house-votes-84.csv', 'r') as f:
+with open('nursery.csv', 'r') as f:
     lines = [line.strip().split(',') for line in f.readlines()]
     header = lines[0]
     data = lines[1:]
@@ -76,13 +76,10 @@ def build_tree(characteristics, rows):
     for value in values:
         new_rows = [row for row in rows if row[header.index(best_characteristic)] == value]
         if calc_entropy(-1, new_rows) == 0:
-            print('1')
             tree[best_characteristic][value] = new_rows[0][-1]
         elif calc_entropy(-1, new_rows) > 0 and calc_entropy(-1, rows) == calc_entropy(-1, new_rows):
-            print('\t2')
             tree[best_characteristic][value] = random.choice(possible_classifications)
         else:
-            print('3')
             subtree = build_tree(remaining_characteristics, new_rows)
             tree[best_characteristic][value] = subtree
     return tree
@@ -107,7 +104,7 @@ def classify(tree, row):
 
 def learn(size, ts):
     training = random.sample(ts, size)
-    tree = build_tree(header[1:-1], training)
+    tree = build_tree(header[:-1], training)
     success = 0
     for vec in test_set:
         res = classify(tree, vec)
@@ -146,9 +143,12 @@ def complete_data_set(m, nm):
 # print(len(comp_data))
 # test_set = comp_data[-50:]
 # training_set = comp_data[:-50]
+
+
+
 sizes = []
 accuracies = []
-for i in range(5, 10):
+for i in range(5000, 60000, 5000):
     print('Size:', i)
     print('Accuracy:', (a := learn(i, training_set)))
     print()

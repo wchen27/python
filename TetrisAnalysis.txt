@@ -1,0 +1,3 @@
+1. It took me about 5 or 6 generations before I got a strategy that scored above 50k points, with a runtime of about 3 or 4 hours (I didn't really keep track). 
+2. My best strategy was (-0.3452226126531417, 0.004064980432249232, -0.0071516307949968105, -0.2921355916956978). The coefficients represent average height, holes, bumpiness, and lines cleared for a board. What suprised me was that the strategy did not really consider the number of holes or bumpiness of the board, which sometimes leads it to fail somewhat early on.
+3. I really liked this assignment but overall found this unit a bit finnicky in terms of coding everthing to be apparently correct but still not being able to successfully complete the assignments. 
