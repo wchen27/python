@@ -222,6 +222,7 @@ def play_game(strategy, printBoard=False):
         if printBoard:
             print_board(board)
             print('Points:', points)
+            print(get_holes(board), get_bumpiness(board), get_avg_height(board))
     return points
 
 
@@ -313,26 +314,26 @@ def get_best(gen):
 best_strategy = (-1.26582441098394, 0.004064980432249232, -0.02265213681715017, -1.2729402391878066)
 
 if __name__ == '__main__':
-    s = input("(N)ew game or (L)oad game?")
-    if s.lower() == 'n':
-        gen = get_starting_pop()
-    elif s.lower() == 'l':
-        fn = input('filename: ')        
-        with open(fn, 'rb') as f:
-            gen = pickle.load(f)
-        best = get_best(gen)
-        print('best strategy: ', best[0])
-        print('score: ', best[1])
-    c = input('(P)lay, (S)ave, (C)ontinue, or (E)xit?')
-    if c.lower() == 'p':
-        play_game(best[0], printBoard=True)
-    elif c.lower() == 's':
-        fn = input('filename: ')
-        with open(fn, 'wb') as f:
-            pickle.dump((gen), f)
-        exit()
-    elif c.lower() == 'c':
-        gen = get_next_gen(gen)
-    elif c.lower() == 'e':
-        exit()
-    
+    # s = input("(N)ew game or (L)oad game?")
+    # if s.lower() == 'n':
+    #     gen = get_starting_pop()
+    # elif s.lower() == 'l':
+    #     fn = input('filename: ')        
+    #     with open(fn, 'rb') as f:
+    #         gen = pickle.load(f)
+    #     best = get_best(gen)
+    #     print('best strategy: ', best[0])
+    #     print('score: ', best[1])
+    # c = input('(P)lay, (S)ave, (C)ontinue, or (E)xit?')
+    # if c.lower() == 'p':
+    #     play_game(best_strategy, printBoard=True)
+    # elif c.lower() == 's':
+    #     fn = input('filename: ')
+    #     with open(fn, 'wb') as f:
+    #         pickle.dump((gen), f)
+    #     exit()
+    # elif c.lower() == 'c':
+    #     gen = get_next_gen(gen)
+    # elif c.lower() == 'e':
+    #     exit()
+    play_game(best_strategy, printBoard=True)

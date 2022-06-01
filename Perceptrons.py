@@ -105,11 +105,15 @@ def xor(inp):
     out = perceptron(step, w3, b3, (v1, v2))
     return out
 
-def p_net(A, x, w_list, b_list):
+def p_net(A, x, w_list, b_list, round=False):
     vA = np.vectorize(A)
     a = [x]
-    for i in range(1, len(w_list)):
-        a.append(vA(a@w_list[i] + b_list[i]))
+    for i in range(len(w_list)):
+        if round:
+            res = np.around(vA(a[i]@w_list[i] + b_list[i]), 0)
+            a.append(res)
+        else:
+            a.append(vA(a[i]@w_list[i] + b_list[i]))
     return a
 
 # XOR HAPPENS HERE (matrix)
@@ -156,22 +160,21 @@ def back_prop_epoch(x, y, wList, bList, lr):
         deltas = [L] + deltas
     for i in range(len(deltas) - 1):
         bList[i] = bList[i] + lr * deltas[i + 1]
-        wList[i] = wList[i] + lr * (network[i]).transpose() @ deltas[i + 1]
+        wList[i] = wList[i] + lr * ((network[i].transpose()) @ deltas[i + 1])
     return (wList, bList)
 
 def back_prop(training_set, wList, bList, lr, num_epochs):
     for i in range(num_epochs):
-        print(i)
         for x, y in training_set:
             wList, bList = back_prop_epoch(x, y, wList, bList, lr)
-        print(i)
+            print(p_net(sigmoid, x, wList, bList)[-1][0])
     return wList, bList
 
 def train_sum():
-    w1 = np.array([[random.random()*2-1, random.random()*2-1], [random.random()*2-1, random.random()*2-1]])
-    w2 = np.array([[random.random()*2-1, random.random()*2-1], [random.random()*2-1, random.random()*2-1]])
-    b1 = np.array([[random.random()*2-1, random.random()*2-1]])
-    b2 = np.array([[random.random()*2-1, random.random()*2-1]])
+    w1 = np.array([[random.uniform(-1, 1), random.uniform(-1, 1)], [random.uniform(-1, 1), random.uniform(-1, 1)]])
+    w2 = np.array([[random.uniform(-1, 1), random.uniform(-1, 1)], [random.uniform(-1, 1), random.uniform(-1, 1)]])
+    b1 = np.array([[random.uniform(-1, 1), random.uniform(-1, 1)]])
+    b2 = np.array([[random.uniform(-1, 1), random.uniform(-1, 1)]])
     wList = [w1, w2]
     bList = [b1, b2]
     inputs = [(0, 0), (0, 1), (1, 0), (1,1)]
@@ -179,7 +182,11 @@ def train_sum():
     training_set = []
     for i in range(len(inputs)):
         training_set.append((np.array([inputs[i]]), np.array([outputs[i]]))) 
-    back_prop(training_set, wList, bList, 0.2, 8000)
+    wList, bList = back_prop(training_set, wList, bList, 0.2, 2000)
+    print()
+    for x, y in training_set:
+        print(p_net(sigmoid, x, wList, bList, round=True)[-1][0])
+    
 
 
 if __name__ == '__main__':
@@ -228,4 +235,6 @@ if __name__ == '__main__':
     #         if inside(point[0], point[1]) == circle(point):
     #             correct += 1
     #     print(correct / 500)
-    train_sum()
+    if sys.argv[1] == 'S':
+        train_sum()
+    
